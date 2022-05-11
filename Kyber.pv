@@ -1,0 +1,243 @@
+(*PRINCIPAL*)
+type Prin.
+const eve:Prin.
+
+(*POLYNOMİAL*)
+type Poly.
+
+fun p+(Poly,Poly):Poly.
+fun p*(Poly,Poly):Poly.
+fun p-(Poly,Poly):Poly.
+fun neg(Poly):Poly.
+
+equation forall P1: Poly; p+(P1,0) = P1.
+equation forall P1: Poly; p*(P1,0) = 0.
+equation forall P1: Poly; p*(P1,1) = P1.
+equation forall P1: Poly, P2:Poly, P3:Poly; p*(P1,p+(P2,P3)) = p+(p*(P1, P2),p*(P1, P3)).
+equation forall P1: Poly, P2: Poly; p-(P1, P2) = p+(P1, neg(P2)).
+equation forall P1: Poly; p+(P1, neg(P1)) = 0.
+equation forall P1: Poly; neg(neg(P1)) = P1.
+equation forall P1: Poly, P2: Poly; neg(p+(P1, P2)) = p+(neg(P1), neg(P2)).
+
+(*VECTOR*)
+type Vector.
+fun tpV(Vector): Vector. (*transpose to a row vector*)
+
+(*--- inner product
+  --- actually, the 1st (or 2nd) should be transposed
+  --- we consider only dot of two vectors having the same size*)
+
+fun dot(Vector, Vector):Poly.
+fun v+(Vector, Vector):Vector.
+
+equation forall V1: Vector, V2: Vector, V3: Vector; dot(v+(V1, V2),V3) = p+(dot(V1, V3), dot(V2, V3)).
+equation forall V1: Vector, V2: Vector, V3: Vector; dot(V3, v+(V1, V2)) = p+(dot(V3, V1), dot(V3, V2)).
+equation forall V1: Vector; tpV(tpV(V1)) = V1.
+equation forall V1: Vector, V2: Vector; tpV(v+(V1,V2)) = v+(tpV(V1), tpV(V2)).
+
+(*only consider square matrix*)
+(*MATRIX*)
+type Matrix.
+fun tp(Matrix):Matrix. (*transpose matrix*)
+fun m*(Matrix, Vector): Vector.
+
+equation forall M: Matrix; tp(tp(M)) = M.
+equation forall M: Matrix, M2:Matrix; m*(tp(M2), tp(M)).
+
+fun isSmall?(Matrix):bool.
+equation forall M:Matrix; isSmall?(tp(M)) = isSmall?(M).
+equation forall V:Vector; isSmall?(tp(V)) = isSmall?(V).
+
+(*reduc forall V:Vector, V2:Vector; isSmall?(v+(V, V2)) = true*)
+new V:Vector;
+new V2:Vector;
+if(isSmall?(V) && isSmall?(V2) then
+  let isSmall?(v+(V, V2)) = true  else
+  let isSmall?(v+(V, V2)) = false.
+
+if(isSmall?(V) && isSmall?(V2) then
+    let isSmall?(dot(V, V2)) = true  else
+    let isSmall?(dot(V, V2)) = false.
+
+new P1:Poly;
+new P2:Poly;
+
+if(isSmall?(P1) && isSmall?(P2) then
+  let isSmall?(p+(P1, P2)) = true  else
+  let isSmall?(p+(P1, P2)) = false.
+
+if(isSmall?(P1) then
+    let isSmall?(neg(P1)) = true  else
+    let isSmall?(neg(P1)) = false.
+
+new M:Matrix;
+new M2:Matrix;
+
+if(isSmall?(M)&& isSmall?(M2)) then
+  let isSmall?(m*(M, M2)) = true else
+  let isSmall?(m*(M, M2)) = false.
+
+
+equation forall M:Matrix, V:Vector, V2:Vector; dot(tpV(m*(M, V)), V2) = dot(tpV(V),m*(tp(M),V2)).
+
+(*POLY-PAIR*)
+type PolyPair.
+
+fun pair(Poly, Poly):PolyPair.
+fun 1st(PolyPair): Poly.
+fun 2nd(PolyPair): Poly.
+
+equation forall E0:Poly, E1:Poly; 1st(pair(E0,E1)) = E0.
+equation forall E0:Poly, E1:Poly; 2nd(pair(E0,E1)) = E1.
+
+(*ENCRYTPTION*)
+(* pr POLY-PAIR + MATRIX .*)
+(*hash function*)
+
+fun H(Poly):Poly.
+fun H'(Vector, Poly): Poly.
+fun G(PolyPair):PolyPair.
+
+(*key derivation function*)
+
+fun KDF(Poly Poly):Poly.
+
+(*compress_q and decompress_q functions*)
+type NzNat.
+
+fun decompr(Poly NzNat):Poly.
+fun decompr(Vector NzNat):Vector.
+fun compr(Poly NzNat):Poly.
+fun compr(Vector NzNat):Vector.
+
+if(isSmall?(E0) then
+    equation forall M:Poly, E0:Poly, E1:Poly; compr(p+(E0, decompr(M,1)),1) = M.
+
+
+(*SAMPLING*)
+fun sample-A(Poly):Matrix.
+
+(*alice side*)
+fun sample-s(Poly):Vector.
+fun sample-e(Poly):Vector.
+
+(*bob side*)
+fun sample-r(Poly):Vector.
+fun sample-e1(Poly):Vector.
+fun sample-e2(Poly):Poly.
+
+equation forall P:Poly; isSmall?(sample-s(P)) = true.
+equation forall P:Poly; isSmall?(sample-e(P)) = true.
+equation forall P:Poly; isSmall?(sample-r(P)) = true.
+equation forall P:Poly; isSmall?(sample-e1(P)) = true.
+equation forall P:Poly; isSmall?(sample-e2(P)) = true.
+
+
+(*MSG-STATE*)
+type MsgState.
+const sent: MsgState.
+const replied:MsgState.
+const intercepted:MsgState.
+
+
+(*MESSAGE*)
+type Msg.
+
+(*AS+E, AND Rho*)
+fun msg1(Prin,Prin,Prin,Vector,Poly,MsgState):Msg.
+
+(*pair(u,v)*)
+fun msg2(Prin,Prin,Prin,Vector,Poly,MsgState):Msg.
+
+
+(*KEY*)
+type Key.
+fun key(Poly, Prin):Key.
+
+(*COLLETION*)
+type Collection.
+type X$Elt.
+
+const empty:Collection.
+(*op __ : Collection{X} Collection{X} -> Collection{X} [assoc comm id: empty ctor] .*)
+fun _(Collection,Collection):Collection.
+fun \in(X$Elt Collection):Bool.
+equation forall E:X$Elt, C:Collection; \in(E,(_(E,C))) = true.
+equation forall E:X$Elt, C:Collection; \in(E,C) = false.
+
+(*SLIST*)
+type List.
+const null: List
+fun ,(List, List):List
+
+
+(*SOUP*)
+type Soup.
+const empty:Soup
+fun _(Soup, Soup):Soup
+
+(* observable components*)
+
+
+(*CONFIG*)
+(*pr SOUP{OComp} .*)
+(*  op {_} : Soup{OComp} -> Config [ctor] .*)
+
+type Config.
+type ColMsg;
+type OComp.
+
+fun nw(Msg:ColMsg):OComp.
+fun keys(key(p))
+
+
+const init: Config.
+const n:NzNat.
+const p:NzNat.
+const q:NzNat.
+const du:NzNat.
+const dv:NzNat.
+
+fun epsilon1(Poly):Poly.
+fun epsilon2(Vector):Vector.
+equation forall VP:Poly; isSmall?(epsilon1(VP)) = true.
+equation forall U:Vector; isSmall?(epsilon2(U)) = true.
+equation forall VP:Poly; decompr(compr(VP,dv),dv) = p+(VP,epsilon1(VP)).
+equation forall U:Vector; decompr(compr(U,du),du) = v+(U,epsilon2(U)).
+
+const d1:Poly.
+const d2:Poly.
+const m1:Poly.
+const m2:Poly.
+
+free alice:prin.
+free bob: prin.
+
+(*PROCESS*)
+
+new A: Prin; new B: Prin; new C: Prin;
+new PoC1: ColPoly; new PoC2: ColPoly; new PoC3: ColPoly; new PoC4: ColPoly;
+new KS: ColKey;
+new PoL: ListPoly; new PoL2: ListPoly; new PoL3: ListPoly;
+new K1: Poly; new K2: Poly; new K3: Poly;
+new KE1: Key; new KE2: Key; new KE3: Key;
+new MS:ColMsg; new MS2:ColMsg; new MS3:ColMsg;
+new N: Nat; new P: Nat; new Q: Nat;
+(*var OCs : Soup{OComp} .*)
+new PS: ColPrin;
+new D: Poly; new D2: Poly; new M: Poly; new M2: Poly; new P1: Poly; new P2: Poly; new Rho: Poly; new RhoA: Poly;
+new M': Poly; new V: Poly; new CV: Poly; new V': Poly; new VB: Poly; new CVB: Poly; new VB': Poly; new Rseed: Poly;
+new PK: Vector; new T: Vector; new U: Vector; new CU: Vector; new U': Vector; new UB: Vector; new CUB: Vector; new UB': Vector; new TA: Vector;
+new MG1:Msg; new MG2:Msg;  new MG3:Msg;  new MG4:Msg;
+new MsgStat: MsgState; new MsgStat2: MsgState;
+new Kr: PolyPair; new Kr2: PolyPair; new RhoSig: PolyPair;
+
+(*--- CPAPKE.enc: pk(= t + ro), m, r*)
+
+fun enc-u(Vector,Poly,Poly,Poly):Vector.
+fun enc-v(Vector,Poly,Poly,Poly):Poly.
+equation forall T:Vector, Rho:Poly, M:Poly, Rseed: Poly; enc-u(T,Rho,M,Rseed) = compr(v+(m*(tp(sample-A(Rho)),sample-r(Rseed)),sample-e1(Rseed)),du).
+equation forall T:Vector, Rho:Poly, M:Poly, Rseed: Poly; enc-v(T,Rho,M,Rseed) = compr(p+(p+(dot(tpV(T),sample-r(Rseed)),sample-e2(Rseed)),decompr(M,1)),dv).
+
+
+(*--- keygen*)
